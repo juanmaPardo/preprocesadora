@@ -1,16 +1,11 @@
-# This is a sample Python script.
+import pandas as pd
+from Preprocesadora import Preprocesadora
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+#df = pd.read_csv("house_living_cost.csv")
+dic = {'Cant A':[4,5,1,6,5],'Cant B':[15,36,20,26,None],'Cant C':[1.2,1,0,-1,-0.8],'Sexo':["F","H","F",None,None]
+       ,'Cat Altura':["Alto","Bajo","Mediano","Bajo",None]}
+df = pd.DataFrame(dic)
 
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+prep = Preprocesadora(df)
+prep.remplazar_no_definidos()
+print(prep.get_dataframe())
