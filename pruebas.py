@@ -9,6 +9,7 @@ df = pd.DataFrame(dic)
 """
 
 prep = Preprocesadora()
-reconstruido, perfomance = prep.reconstruir_por_prediccion(df)
-print(reconstruido)
+reconstruido, perfomance = prep.reconstruir_por_prediccion(df,columnas_excluir=["X1a"])
+#df = prep.obtener_filas_no_definidas_en_columna(df,"X1a")
+print(df)
 

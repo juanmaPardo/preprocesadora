@@ -393,8 +393,8 @@ class Preprocesadora:
         copy = df.copy()
         not_null_values = pd.notnull(copy[target_column].values)
         df_preparado_para_entrenamiento, dic_inv = self.__obtener_training_df__(copy, target_column)
-        training_df = df_preparado_para_entrenamiento[not_null_values]#.reset_index().drop("index")
-        df_input_a_predecir = df_preparado_para_entrenamiento[[not i for i in not_null_values]]
+        training_df = self.obtener_filas_definidas_en_columna(df_preparado_para_entrenamiento,target_column)
+        df_input_a_predecir = self.obtener_filas_no_definidas_en_columna(df_preparado_para_entrenamiento, target_column)
         X_predecir = df_input_a_predecir.drop(target_column, 1).values
         prediccion, goodness_of_fit = self.__obtener_prediccion__(training_df, X_predecir, target_column)
         df_preparado_para_entrenamiento[target_column] = self.__rellenear_no_definidos_by_lista__(df_preparado_para_entrenamiento,target_column,prediccion)
@@ -419,16 +419,47 @@ class Preprocesadora:
         demuestra 'la performance' que obtuvimos de la red neuronal durante el training.
         """
         copy = df.copy()
-        #Excluimos columnas indicadas
-        for columna in columnas_excluir:
-            copy = copy.drop(columna,1)
 
         goodness_of_fits= {}
         for col in copy:
-            if not all(pd.notnull(copy[col].values)):
+            if (not all(pd.notnull(copy[col].values))) and (col not in columnas_excluir):
                 copy[col],goodness_of_fits[col] = self.__predecir_no_definidos__(copy,col)
 
         return copy,goodness_of_fits
 
+    def obtener_filas_definidas_en_columna(self,df,target_column):
+        """
+        Dado un dataframe y una columna, devuelve un dataframe que contiene todas las
+        filas para las cuales el valor en la target_column se encuentra definido
+        :param df: Instancia valida de un dataframe
+        :param target_column: Nombre de la columna
+        :return: Dataframe cuyos valores en la target_column se encuentran todos definidos
+        """
+        copy = df.copy()
+        not_null_values = pd.notnull(copy[target_column].values)
+        return copy[not_null_values].reset_index(drop=True)
 
+    def obtener_filas_no_definidas_en_columna(self,df,target_column):
+        """
+           Dado un dataframe y una columna, devuelve un dataframe que contiene todas las
+           filas para las cuales el valor en la target_column no se encuentra definido
+           :param df: Instancia valida de un dataframe
+           :param target_column: Nombre de la columna
+           :return: Dataframe cuyos valores en la target_column se encuentran todos indefinidos
+        """
+        copy = df.copy()
+        not_null_values = pd.isnull(copy[target_column].values)
+        return copy[not_null_values].reset_index(drop=True)
 
+    def get_X_Y_output_definido(self,df,target_column):
+        """
+        Dado un dataframe y una target_column, devuelve un numpy array que representa
+        el valor de los inputs, y un numpy array que representa el valor de los outputs.
+        :param df: Instancia valida de un dataframe
+        :param target_column: Nombre de la columna objetivo
+        :return: Dos numpy array, uno representando los valores X y otros los Y.
+        """
+        filas_definidas = self.obtener_filas_definidas_en_columna(df,target_column)
+        X = filas_definidas.drop(target_column).values
+        Y = filas_definidas[target_column].values.reshape(-1,1)
+        return X,Y
