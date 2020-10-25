@@ -18,6 +18,7 @@ import tensorflow as tf
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense,Flatten,Dropout
 from tensorflow.keras import optimizers
+from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras import regularizers
 from tensorflow.keras import losses
 from tensorflow.keras import metrics
@@ -143,6 +144,8 @@ class Preprocesadora:
         :return: Devuelve True si todos los valores de la columna son discretos, False
         en caso contrario
         """
+        if not is_numeric_dtype(df[target_column]):
+            return False
         not_null_values = df[target_column].values[pd.notnull(df[target_column].values)]
         return all([int(valor)==valor for valor in not_null_values])
 
@@ -299,7 +302,7 @@ class Preprocesadora:
         return cant_neuronas_layer
 
     def __generar_modelo__(self,df_shape,neuronas_output,factor_phl=0.58,factor_crecimiento=1.8,
-                           factor_decrecimiento=0.7,fact="relu",depth=3):
+                           factor_decrecimiento=0.7,fact=LeakyReLU(),depth=3):
         """
         Genera un modelo secuencial que se utilizara para entrenar la red neuronal.
         :param df_shape: Shape del dataframe
@@ -463,3 +466,37 @@ class Preprocesadora:
         X = filas_definidas.drop(target_column).values
         Y = filas_definidas[target_column].values.reshape(-1,1)
         return X,Y
+
+    def dividir_dataframe(self,df,target_columns):
+        """
+        Dato un dataframe y una lista conteniendo los nombres de las columnas a separar
+        devuelve dos dataframe, uno que contiene todas las columnas a excepcion de las
+        target_columns y otro que contiene solo las target_columns
+        :param df: Instancia valida de un dataframe
+        :param target_columns: Lista que representa las columnas a separar
+        :return: Dataframe con columnas no incluidas en target_columns, dataframe solo
+        con columnas incluidas en target_columns
+        """
+        df_A = df.copy()
+        df_B = df_A[target_columns]
+        for col_name in target_columns:
+            df_A = df_A.drop(col_name,axis=1)
+        return df_A,df_B
+
+    def categorizar_columna(self,df,column,dic_map={}):
+        """
+        Categoriza los valores de una columna dado que la columna sea numerica. Los valores
+        indefinidos se remplazan por Undefined.
+        y tenga valores enteros no flotantes
+        :param df: Instancia valida de un dataframe
+        :param column: Columna a categorizar
+        :param dic_map: Diccionario en donde la key es el valor numerico y el
+        value es el nombre de la categoria por la cual debemos remplazar dicho valor
+        :return: Dataframe con la columna indicada categorizada.
+        """
+        copy = df.copy()
+        if self.__es_columna_discreta__(df,column):
+            copy[column] = [(dic_map[val] if (val in dic_map) else "{}".format(int(val))) if(not np.isnan(val)) else "Undefined" for val in copy[column].values]
+        return copy
+
+    
